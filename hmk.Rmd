@@ -1,0 +1,134 @@
+---
+title: "R hmk notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+https://github.com/rmcelreath/statrethinking_winter2019/tree/master/homework
+
+# homework 1
+
+```{r setup}
+library(rethinking)
+eval_hmk1<-T
+```
+
+
+
+```{r hmk1GridApprox,eval=eval_hmk1}
+# define grid, number of points to use when
+# estimating posterior
+p_grid <- seq( from=0 , to=1 , length.out=1000 )
+
+# define initial prior at each point
+prior <- rep( 1 , 1000 )
+
+# compute likelihood at each value in grid.
+# The likelihood of seeing any of those probabilities
+likelihood <- dbinom( 8 , size=15 , prob=p_grid )
+
+# compute product of likelihood and prior
+# This is the unstandardized posterior for
+# each possible parameter
+unstd.posterior <- likelihood * prior
+
+# standardize the posterior, so it sums to 1
+posterior <- unstd.posterior / sum(unstd.posterior)
+
+samples<-sample(p_grid,prob=posterior,size=1e4, replace=T)
+
+# plot the grid
+plot( p_grid , posterior , type="b" ,
+xlab="probability of water" , ylab="posterior probability" )
+mtext( "20 points" )
+
+
+```
+
+
+
+```{r weirdPriorhmk1,eval=eval_hmk1}
+
+
+
+# define grid, number of points to use when
+# estimating posterior
+p_grid <- seq( from=0 , to=1 , length.out=1000 )
+
+# define initial prior at each point
+prior <- c(rep( 0 , 500 ), rep(.5,500))
+
+# compute likelihood at each value in grid.
+# The likelihood of seeing any of those probabilities
+likelihood <- dbinom( 8 , size=15 , prob=p_grid )
+
+# compute product of likelihood and prior
+# This is the unstandardized posterior for
+# each possible parameter
+unstd.posterior <- likelihood * prior
+
+# standardize the posterior, so it sums to 1
+posterior <- unstd.posterior / sum(unstd.posterior)
+
+
+# plot the grid
+plot( p_grid , posterior , type="b" ,
+xlab="probability of water" , ylab="posterior probability" )
+mtext( "20 points" )
+
+samples2<-sample(p_grid,prob=posterior,size=1e4, replace=T)
+
+
+```
+
+
+```{r hmk1jointSamples,eval=eval_hmk1}
+
+dens(samples,xlab='p',xlim=c(0,1),ylim=c(0,6))
+dens(samples2,add=T,lty=2)
+abline(v=0.7,col='red')
+
+PI(samples,.99)
+PI(samples2,.99)
+```
+
+```{r hmk1TrialFunctions,eval=eval_hmk1}
+
+f <-function(n){
+  pTrue<-0.7
+  w<-rbinom(1,size=n,prob=pTrue)
+  
+  p_grid <- seq( from=0 , to=1 , length.out=1000 )
+
+# define initial prior at each point
+  prior <- rep( 1 , 1000 )
+
+# compute likelihood at each value in grid.
+# The likelihood of seeing any of those probabilities
+likelihood <- dbinom( w , size=n , prob=p_grid )
+
+# compute product of likelihood and prior
+# This is the unstandardized posterior for
+# each possible parameter
+unstd.posterior <- likelihood * prior
+
+# standardize the posterior, so it sums to 1
+posterior <- unstd.posterior / sum(unstd.posterior)
+
+samples<-sample(p_grid,prob=posterior,size=1e4, replace=T)
+
+PI99<-PI(samples,0.99)
+as.numeric(PI99[2]-PI99[1])
+
+}
+
+
+tests<-rep(floor(seq(1,2000,length.out = 50)),each=50)
+
+width<-sapply(tests,f)
+plot(tests,width,xlab="sampleSize",ylab="percentile inverval width")
+abline(h=0.05,col='red')
+
+```
